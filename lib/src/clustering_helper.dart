@@ -23,6 +23,8 @@ class ClusteringHelper {
     @required this.aggregationSetup,
     this.maxZoomForAggregatePoints = 13.5,
     this.bitmapAssetPathForSingleMarker,
+    this.onClusterMarkerTap,
+    this.onSingleMarkerTap,
   })  : assert(dbTable != null),
         assert(dbGeohashColumn != null),
         assert(dbLongColumn != null),
@@ -35,6 +37,8 @@ class ClusteringHelper {
     this.maxZoomForAggregatePoints = 13.5,
     @required this.aggregationSetup,
     this.bitmapAssetPathForSingleMarker,
+    this.onClusterMarkerTap,
+    this.onSingleMarkerTap,
   })  : assert(list != null),
         assert(aggregationSetup != null);
 
@@ -79,6 +83,9 @@ class ClusteringHelper {
 
   //List of points for memory clustering
   List<LatLngAndGeohash> list;
+
+  Function onClusterMarkerTap;
+  Function onSingleMarkerTap;
 
   //Call during the editing of CameraPosition
   //If you want updateMap during the zoom in/out set forceUpdate to true
@@ -225,7 +232,7 @@ class ClusteringHelper {
       return true;
     }());
 
-    final Set<Marker> markers = {};
+    final Set<Marker> markers = Set();
 
     for (var i = 0; i < aggregation.length; i++) {
       final a = aggregation[i];
@@ -252,11 +259,13 @@ class ClusteringHelper {
       final MarkerId markerId = MarkerId(a.getId());
 
       final marker = Marker(
-        markerId: markerId,
-        position: a.location,
-        infoWindow: InfoWindow(title: a.count.toString()),
-        icon: bitmapDescriptor,
-      );
+          markerId: markerId,
+          position: a.location,
+          infoWindow: InfoWindow(title: a.count.toString()),
+          icon: bitmapDescriptor,
+          onTap: () {
+            if (null != onClusterMarkerTap) onClusterMarkerTap(a);
+          });
 
       markers.add(marker);
     }
@@ -285,15 +294,17 @@ class ClusteringHelper {
       final Set<Marker> markers = listOfPoints.map((p) {
         final MarkerId markerId = MarkerId(p.getId());
         return Marker(
-          markerId: markerId,
-          position: p.location,
-          infoWindow: InfoWindow(
-              title:
-                  "${p.location.latitude.toStringAsFixed(2)},${p.location.longitude.toStringAsFixed(2)}"),
-          icon: bitmapAssetPathForSingleMarker != null
-              ? BitmapDescriptor.fromAsset(bitmapAssetPathForSingleMarker)
-              : BitmapDescriptor.defaultMarker,
-        );
+            markerId: markerId,
+            position: p.location,
+            infoWindow: InfoWindow(
+                title:
+                    "${p.location.latitude.toStringAsFixed(2)},${p.location.longitude.toStringAsFixed(2)}"),
+            icon: bitmapAssetPathForSingleMarker != null
+                ? BitmapDescriptor.fromAsset(bitmapAssetPathForSingleMarker)
+                : BitmapDescriptor.defaultMarker,
+            onTap: () {
+              if (null != onSingleMarkerTap) onSingleMarkerTap(p);
+            });
       }).toSet();
       updateMarkers(markers);
     } catch (ex) {
